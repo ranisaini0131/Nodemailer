@@ -1,5 +1,8 @@
 const nodemailer = require("nodemailer");
-const { EMAIL, PASSWORD } = require('nodemailer');
+const Mailgen = require('mailgen');
+
+const { EMAIL, PASSWORD } = require('../.env');
+const Mail = require("nodemailer/lib/mailer/index.js");
 
 //send mail from testing account
 const signup = async (req, res) => {
@@ -43,6 +46,8 @@ const signup = async (req, res) => {
 
 //send mail from real gmail account
 const getBill = (req, res) => {
+
+    const { userEmail } = req.body;
     let config = {
         service: 'gmail',
         auth: {
@@ -51,9 +56,51 @@ const getBill = (req, res) => {
         }
     }
 
-    let transporter = nodemon.createTransport(config);
+    let transporter = nodemailer.createTransport(config);
 
-    res.status(201).json("getBill Successfully");
+    let MailGenerator = new Mailgen({
+        theme: "default",
+        product: {
+            name: "Mailgen",
+            link: "https://mailgen.js/"
+        }
+    })
+
+    let response = {
+        body: {
+            name: "Rani Saini",
+            intro: "Your bill has arrived",
+            table: {
+                data: [
+                    {
+                        item: "Nodemailer Stack Book",
+                        description: "A Backend applicaton",
+                        price: "$10.99",
+                    }
+                ]
+            },
+            outro: "Looking forward to do more buisness"
+        }
+    }
+
+    let mail = MailGenerator.generate(response);
+
+    let message = {
+        from: EMAIL,
+        to: userEmail,
+        subject: 'Place Order',
+        html: mail
+    }
+
+    transporter.sendMail(message).then(() => {
+        return res.status(201).json({
+            msg: "You should receive an email",
+        })
+    }).catch(error => {
+        return res.status(500).json({ error });
+    })
+
+    return res.status(201).json("getBill Successfully");
 }
 
 
